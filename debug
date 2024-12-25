@@ -1,0 +1,28 @@
+display_personal_details() {
+    EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
+    [ $? -ne 0 ] && exit 1
+
+    echo "Debug: Searching for EmpID $EMP_ID in $PERSONAL_CSV" >> debug.log
+
+    if [ ! -f "$PERSONAL_CSV" ]; then
+        zenity --error --title="Error" --text="No personal data found!"
+        return
+    fi
+
+    DETAILS=$(grep "^$EMP_ID," "$PERSONAL_CSV")
+    echo "Debug: Found details: $DETAILS" >> debug.log
+
+    if [ -z "$DETAILS" ]; then
+        zenity --info --title="No Details Found" --text="No details found for EmpID: $EMP_ID"
+    else
+        zenity --text-info --title="Personal Details for $EMP_ID" --width=600 --height=200 --filename=<(echo "$DETAILS")
+    fi
+}
+
+
+add_flight_details() {
+    EMP_ID="$1"
+    echo "Debug: Adding flight details for EmpID: $EMP_ID" >> debug.log
+
+    # Rest of the code...
+}
