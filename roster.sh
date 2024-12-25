@@ -9,7 +9,7 @@ add_flight_details() {
     [ $? -ne 0 ] && exit 1
 
     if [ ! -f "$ROSTER_CSV" ]; then
-        echo "EmpID,Flight From,Flight To,Flight Date,Departure Time,Arrival Time" > "$ROSTER_CSV"
+        echo "EmpID,Flight From,Flight To,Flight Date,Departure Time,Arrival Time,Airline" > "$ROSTER_CSV"
     fi
 
     FLIGHT_FROM=$(zenity --entry --title="Flight From" --text="Enter departure location:")
@@ -22,8 +22,10 @@ add_flight_details() {
     [ $? -ne 0 ] && exit 1
     ARRIVAL_TIME=$(zenity --entry --title="Arrival Time" --text="Enter arrival time (HH:MM) in 24-hour format:")
     [ $? -ne 0 ] && exit 1
+    AIRLINE=$(zenity --entry --title="Airline" --text="Enter airline name:")
+    [ $? -ne 0 ] && exit 1
 
-    echo "$EMP_ID,$FLIGHT_FROM,$FLIGHT_TO,$FLIGHT_DATE,$DEPARTURE_TIME,$ARRIVAL_TIME" >> "$ROSTER_CSV"
+    echo "$EMP_ID,$FLIGHT_FROM,$FLIGHT_TO,$FLIGHT_DATE,$DEPARTURE_TIME,$ARRIVAL_TIME,$AIRLINE" >> "$ROSTER_CSV"
     zenity --info --title="Success" --text="Flight details added successfully!"
 }
 
@@ -47,8 +49,8 @@ display_flight_details() {
     FROM_TO=$(echo "$FLIGHTS" | awk -F, '{printf "From: %s\nTo: %s\n\n", $2, $3}')
     zenity --text-info --title="Flight Routes for $EMP_ID" --width=400 --height=300 --filename=<(echo "$FROM_TO")
 
-    # Display "Date," "Departure Time," and "Arrival Time"
-    DETAILS=$(echo "$FLIGHTS" | awk -F, '{printf "Date: %s\nDeparture: %s\nArrival: %s\n\n", $4, $5, $6}')
+    # Display "Date," "Departure Time," "Arrival Time," and "Airline"
+    DETAILS=$(echo "$FLIGHTS" | awk -F, '{printf "Date: %s\nDeparture: %s\nArrival: %s\nAirline: %s\n\n", $4, $5, $6, $7}')
     zenity --text-info --title="Flight Timings for $EMP_ID" --width=500 --height=400 --filename=<(echo "$DETAILS")
 }
 
