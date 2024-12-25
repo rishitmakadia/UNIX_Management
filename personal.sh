@@ -34,6 +34,30 @@ add_personal_details() {
     zenity --info --title="Success" --text="Personal details added successfully! EmpID: $EMP_ID"
 }
 
+# Function to delete personal details
+delete_personal_details() {
+    EMP_ID=$(zenity --entry --title="Delete Pilot" --text="Enter EmpID to delete:")
+    [ $? -ne 0 ] && exit 1
+
+    if [ ! -f "$PERSONAL_CSV" ]; then
+        zenity --error --title="Error" --text="No personal data found!"
+        return
+    fi
+
+    # Check if the EmpID exists
+    if ! grep -q "^$EMP_ID," "$PERSONAL_CSV"; then
+        zenity --info --title="No Details Found" --text="No details found for EmpID: $EMP_ID"
+        return
+    fi
+
+    # Create a temporary file to store the updated data
+    TEMP_FILE=$(mktemp)
+    grep -v "^$EMP_ID," "$PERSONAL_CSV" > "$TEMP_FILE"
+    mv "$TEMP_FILE" "$PERSONAL_CSV"
+
+    zenity --info --title="Success" --text="Personal details for EmpID: $EMP_ID deleted successfully!"
+}
+
 # Function to display invoice
 display_invoice() {
     EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
@@ -56,7 +80,7 @@ display_invoice() {
     TAX=$(echo "$GROSS_PAY * 0.3" | bc)
     NET_PAY=$(echo "$GROSS_PAY - $TAX" | bc)
 
-    INVOICE="EmpID: $EMP_ID\nTotal Flight Hours: $TOTAL_HOURS hours\nHourly Rate: $50/hour\nGross Pay: $ $GROSS_PAY\nTax Deduction (30%): $ $TAX\nTake-Home Pay: $ $NET_PAY"
+    INVOICE="EmpID: $EMP_ID\nTotal Flight Hours: $TOTAL_HOURS hours\nHourly Rate: ₹50/hour\nGross Pay: ₹$GROSS_PAY\nTax Deduction (30%): ₹$TAX\nTake-Home Pay: ₹$NET_PAY"
     zenity --text-info --title="Invoice for $EMP_ID" --width=600 --height=300 --filename=<(echo -e "$INVOICE")
 }
 
@@ -65,6 +89,7 @@ while true; do
     CHOICE=$(zenity --list --title="Pilot Management System" \
         --column="Action" --width=400 --height=400 \
         "Add Personal Details" \
+        "Delete Pilot" \
         "Add Flight Roster" \
         "Display Flights for Pilot" \
         "Generate Invoice" \
@@ -73,6 +98,9 @@ while true; do
     case $CHOICE in
         "Add Personal Details")
             add_personal_details
+            ;;
+        "Delete Pilot Details")
+            delete_personal_details
             ;;
         "Add Flight Roster")
             bash "$ROSTER_SCRIPT"
