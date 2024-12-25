@@ -5,10 +5,11 @@ ROSTER_CSV="roster.csv"
 
 # Function to add flight details
 add_flight_details() {
-    EMP_ID="$1"
+    EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
+    [ $? -ne 0 ] && exit 1
 
     if [ ! -f "$ROSTER_CSV" ]; then
-        echo "EmpID,Flight From,Flight To,Flight Date,Flight Number" > "$ROSTER_CSV"
+        echo "EmpID,Flight From,Flight To,Flight Date,Departure Time,Arrival Time" > "$ROSTER_CSV"
     fi
 
     FLIGHT_FROM=$(zenity --entry --title="Flight From" --text="Enter departure location:")
@@ -17,38 +18,44 @@ add_flight_details() {
     [ $? -ne 0 ] && exit 1
     FLIGHT_DATE=$(zenity --calendar --title="Flight Date" --text="Select flight date:" --date-format="%Y-%m-%d")
     [ $? -ne 0 ] && exit 1
-    FLIGHT_NUMBER=$(zenity --entry --title="Flight Number" --text="Enter flight number:")
+    DEPARTURE_TIME=$(zenity --entry --title="Departure Time" --text="Enter departure time (HH:MM) in 24-hour format:")
+    [ $? -ne 0 ] && exit 1
+    ARRIVAL_TIME=$(zenity --entry --title="Arrival Time" --text="Enter arrival time (HH:MM) in 24-hour format:")
     [ $? -ne 0 ] && exit 1
 
-    echo "$EMP_ID,$FLIGHT_FROM,$FLIGHT_TO,$FLIGHT_DATE,$FLIGHT_NUMBER" >> "$ROSTER_CSV"
+    echo "$EMP_ID,$FLIGHT_FROM,$FLIGHT_TO,$FLIGHT_DATE,$DEPARTURE_TIME,$ARRIVAL_TIME" >> "$ROSTER_CSV"
     zenity --info --title="Success" --text="Flight details added successfully!"
 }
 
-# Validate input argument
-if [ -z "$1" ]; then
-    zenity --error --title="Error" --text="EmpID is required to access roster!"
-    exit 1
+# Function to display flight details
+display_flight_details() {
+    EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
+    [ $? -ne 0 ] && exit 1
+
+    if [ ! -f "$ROSTER_CSV" ]; then
+        zenity --error --title="Error" --text="No flight roster data found!"
+        return
+    fi
+
+    FLIGHTS=$(grep "^$EMP_ID," "$ROSTER_CSV")
+    if [ -z "$FLIGHTS" ]; then
+        zenity --info --title="No Flights Found" --text="No flights found for EmpID: $EMP_ID"
+        return
+    fi
+
+    # Display "From" and "To" details
+    FROM_TO=$(echo "$FLIGHTS" | awk -F, '{printf "From: %s\nTo: %s\n\n", $2, $3}')
+    zenity --text-info --title="Flight Routes for $EMP_ID" --width=400 --height=300 --filename=<(echo "$FROM_TO")
+
+    # Display "Date," "Departure Time," and "Arrival Time"
+    DETAILS=$(echo "$FLIGHTS" | awk -F, '{printf "Date: %s\nDeparture: %s\nArrival: %s\n\n", $4, $5, $6}')
+    zenity --text-info --title="Flight Timings for $EMP_ID" --width=500 --height=400 --filename=<(echo "$DETAILS")
+}
+
+# Validate input arguments
+if [ "$1" == "display" ]; then
+    display_flight_details
+    exit 0
 fi
 
-EMP_ID="$1"
-
-# Roster Management Menu
-while true; do
-    CHOICE=$(zenity --list --title="Roster Management for EmpID: $EMP_ID" \
-        --column="Action" --width=400 --height=300 \
-        "Add Flight Details" \
-        "Exit")
-
-    case $CHOICE in
-        "Add Flight Details")
-            add_flight_details "$EMP_ID"
-            ;;
-        "Exit")
-            exit 0
-            ;;
-        *)
-            zenity --error --title="Error" --text="Invalid choice! Try again."
-            ;;
-    esac
-done
-
+add_flight_details

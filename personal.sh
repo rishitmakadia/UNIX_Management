@@ -34,17 +34,8 @@ add_personal_details() {
     zenity --info --title="Success" --text="Personal details added successfully! EmpID: $EMP_ID"
 }
 
-# Function to call roster script
-add_flight_roster() {
-    EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
-    [ $? -ne 0 ] && exit 1
-
-    # Pass EmpID to roster script
-    bash "$ROSTER_SCRIPT" "$EMP_ID"
-}
-
-# Function to display flights for a particular pilot
-display_flights() {
+# Function to display invoice
+display_invoice() {
     EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
     [ $? -ne 0 ] && exit 1
 
@@ -56,39 +47,27 @@ display_flights() {
     FLIGHTS=$(grep "^$EMP_ID," "roster.csv")
     if [ -z "$FLIGHTS" ]; then
         zenity --info --title="No Flights Found" --text="No flights found for EmpID: $EMP_ID"
-    else
-        FORMATTED_FLIGHTS=$(echo "$FLIGHTS" | awk -F, '{printf "Flight No: %s\nFrom: %s\nTo: %s\nDate: %s\n\n", $5, $2, $3, $4}')
-        zenity --text-info --title="Flights for EmpID: $EMP_ID" --width=600 --height=400 --filename=<(echo "$FORMATTED_FLIGHTS")
-    fi
-}
-
-# Function to display personal details
-display_personal_details() {
-    EMP_ID=$(zenity --entry --title="Enter EmpID" --text="Enter EmpID:")
-    [ $? -ne 0 ] && exit 1
-
-    if [ ! -f "$PERSONAL_CSV" ]; then
-        zenity --error --title="Error" --text="No personal data found!"
         return
     fi
 
-    DETAILS=$(grep "^$EMP_ID," "$PERSONAL_CSV")
-    if [ -z "$DETAILS" ]; then
-        zenity --info --title="No Details Found" --text="No details found for EmpID: $EMP_ID"
-    else
-        FORMATTED_DETAILS=$(echo "$DETAILS" | awk -F, '{printf "EmpID: %s\nFirst Name: %s\nLast Name: %s\nPhone: %s\n", $1, $2, $3, $4}')
-        zenity --text-info --title="Personal Details for $EMP_ID" --width=600 --height=200 --filename=<(echo "$FORMATTED_DETAILS")
-    fi
+    TOTAL_HOURS=$(echo "$FLIGHTS" | awk -F, '{split($5, dep, ":"); split($6, arr, ":"); diff=((arr[1] - dep[1]) * 60 + (arr[2] - dep[2])) / 60; if (diff < 0) diff += 24; total += diff} END {print total}')
+    HOURLY_RATE=50
+    GROSS_PAY=$(echo "$TOTAL_HOURS * $HOURLY_RATE" | bc)
+    TAX=$(echo "$GROSS_PAY * 0.3" | bc)
+    NET_PAY=$(echo "$GROSS_PAY - $TAX" | bc)
+
+    INVOICE="EmpID: $EMP_ID\nTotal Flight Hours: $TOTAL_HOURS hours\nHourly Rate: $50/hour\nGross Pay: $ $GROSS_PAY\nTax Deduction (30%): $ $TAX\nTake-Home Pay: $ $NET_PAY"
+    zenity --text-info --title="Invoice for $EMP_ID" --width=600 --height=300 --filename=<(echo -e "$INVOICE")
 }
 
 # Main Menu
 while true; do
     CHOICE=$(zenity --list --title="Pilot Management System" \
-        --column="Action" --width=400 --height=300 \
+        --column="Action" --width=400 --height=400 \
         "Add Personal Details" \
         "Add Flight Roster" \
         "Display Flights for Pilot" \
-        "Display Personal Details" \
+        "Generate Invoice" \
         "Exit")
 
     case $CHOICE in
@@ -96,13 +75,13 @@ while true; do
             add_personal_details
             ;;
         "Add Flight Roster")
-            add_flight_roster
+            bash "$ROSTER_SCRIPT"
             ;;
         "Display Flights for Pilot")
-            display_flights
+            bash "$ROSTER_SCRIPT" display
             ;;
-        "Display Personal Details")
-            display_personal_details
+        "Generate Invoice")
+            display_invoice
             ;;
         "Exit")
             exit 0
@@ -112,4 +91,3 @@ while true; do
             ;;
     esac
 done
-
