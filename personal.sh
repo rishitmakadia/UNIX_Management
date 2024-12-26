@@ -75,12 +75,30 @@ display_invoice() {
     fi
 
     TOTAL_HOURS=$(echo "$FLIGHTS" | awk -F, '{split($5, dep, ":"); split($6, arr, ":"); diff=((arr[1] - dep[1]) * 60 + (arr[2] - dep[2])) / 60; if (diff < 0) diff += 24; total += diff} END {print total}')
-    HOURLY_RATE=50
-    GROSS_PAY=$(echo "$TOTAL_HOURS * $HOURLY_RATE" | bc)
+    
+    # Determine pilot rank and corresponding bonus
+    PILOT_RANK=$(echo "$FLIGHTS" | awk -F, '{print $8}' | head -n 1)
+    case "$PILOT_RANK" in
+        "Junior Pilot")
+            BONUS_RATE=400
+            ;;
+        "Senior Pilot")
+            BONUS_RATE=500
+            ;;
+        "Captain")
+            BONUS_RATE=700
+            ;;
+        *)
+            BONUS_RATE=0
+            ;;
+    esac
+
+    HOURLY_RATE=1000
+    GROSS_PAY=$(echo "$TOTAL_HOURS * $HOURLY_RATE + $TOTAL_HOURS * $BONUS_RATE" | bc)
     TAX=$(echo "$GROSS_PAY * 0.3" | bc)
     NET_PAY=$(echo "$GROSS_PAY - $TAX" | bc)
 
-    INVOICE="EmpID: $EMP_ID\nTotal Flight Hours: $TOTAL_HOURS hours\nHourly Rate: ₹50/hour\nGross Pay: ₹$GROSS_PAY\nTax Deduction (30%): ₹$TAX\nTake-Home Pay: ₹$NET_PAY"
+    INVOICE="EmpID: $EMP_ID\nTotal Flight Hours: $TOTAL_HOURS hours\nHourly Rate: ₹1000/hour\nBonus: ₹$((TOTAL_HOURS * BONUS_RATE))\nGross Pay: ₹$GROSS_PAY\nTax Deduction (30%): ₹$TAX\nTake-Home Pay: ₹$NET_PAY"
     zenity --text-info --title="Invoice for $EMP_ID" --width=600 --height=300 --filename=<(echo -e "$INVOICE")
 }
 
