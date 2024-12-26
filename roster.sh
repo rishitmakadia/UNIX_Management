@@ -9,7 +9,7 @@ add_flight_details() {
     [ $? -ne 0 ] && exit 1
 
     if [ ! -f "$ROSTER_CSV" ]; then
-        echo "EmpID,Flight From,Flight To,Flight Date,Departure Time,Arrival Time,Airline,Pilot Rank" > "$ROSTER_CSV"
+        echo "EmpID,Flight From,Flight To,Flight Date,Departure Time,Arrival Time,Flight Number" > "$ROSTER_CSV"
     fi
 
     FLIGHT_FROM=$(zenity --entry --title="Flight From" --text="Enter departure location:")
@@ -22,13 +22,10 @@ add_flight_details() {
     [ $? -ne 0 ] && exit 1
     ARRIVAL_TIME=$(zenity --entry --title="Arrival Time" --text="Enter arrival time (HH:MM) in 24-hour format:")
     [ $? -ne 0 ] && exit 1
-    AIRLINE=$(zenity --entry --title="Airline" --text="Enter airline name:")
+    FLIGHT_NUMBER=$(zenity --entry --title="Flight Number" --text="Enter flight number:")
     [ $? -ne 0 ] && exit 1
 
-    PILOT_RANK=$(zenity --list --title="Select Pilot Rank" --text="Choose the pilot rank:" --column="Rank" "Junior Pilot" "Senior Pilot" "Captain" --multiple --separator=",")
-    [ $? -ne 0 ] && exit 1
-
-    echo "$EMP_ID,$FLIGHT_FROM,$FLIGHT_TO,$FLIGHT_DATE,$DEPARTURE_TIME,$ARRIVAL_TIME,$AIRLINE,$PILOT_RANK" >> "$ROSTER_CSV"
+    echo "$EMP_ID,$FLIGHT_FROM,$FLIGHT_TO,$FLIGHT_DATE,$DEPARTURE_TIME,$ARRIVAL_TIME,$FLIGHT_NUMBER" >> "$ROSTER_CSV"
     zenity --info --title="Success" --text="Flight details added successfully!"
 }
 
@@ -48,13 +45,9 @@ display_flight_details() {
         return
     fi
 
-    # Display "From" and "To" details
-    FROM_TO=$(echo "$FLIGHTS" | awk -F, '{printf "From: %s\nTo: %s\n\n", $2, $3}')
-    zenity --text-info --title="Flight Routes for $EMP_ID" --width=400 --height=300 --filename=<(echo "$FROM_TO")
-
-    # Display "Date," "Departure Time," "Arrival Time," "Airline," and "Pilot Rank"
-    DETAILS=$(echo "$FLIGHTS" | awk -F, '{printf "Date: %s\nDeparture: %s\nArrival: %s\nAirline: %s\nPilot Rank: %s\n\n", $4, $5, $6, $7, $8}')
-    zenity --text-info --title="Flight Timings for $EMP_ID" --width=500 --height=400 --filename=<(echo "$DETAILS")
+    # Display flight details
+    DETAILS=$(echo "$FLIGHTS" | awk -F, '{printf "From: %s\nTo: %s\nDate: %s\nDeparture: %s\nArrival: %s\nFlight Number: %s\n\n", $2, $3, $4, $5, $6, $7}')
+    zenity --text-info --title="Flight Details for $EMP_ID" --width=500 --height=400 --filename=<(echo "$DETAILS")
 }
 
 # Validate input arguments

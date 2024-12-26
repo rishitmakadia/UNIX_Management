@@ -1,7 +1,3 @@
-EmpID,First Name,Last Name,Phone
-RM709,Rishit,Makadia,7096050504
-
-
-MK852,Manoj,Kumar,85234314
-MK786,Mohit,Kumar,78689311
-RT696,Ria,Tia,6969696
+EmpID,First Name,Last Name,Phone,Airline,Designation
+EJ098,Erik,Joe,0987654321,Air Asia,Junior Pilot
+MK123,Mohit,Kumar,1234567890,Air India,Captain
